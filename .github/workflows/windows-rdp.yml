@@ -6,11 +6,27 @@ on:
 jobs:
   secure-rdp:
     runs-on: windows-latest
-    timeout-minutes: 3600
+    timeout-minutes: 360
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # ============ 新增：安装 Microsoft 365 ============
+      - name: Install Microsoft 365
+        shell: pwsh
+        run: |
+          for($i=0;$i -lt 3;$i++){
+            try{
+              Invoke-WebRequest "https://github.com/asheroto/Deploy-Office/releases/latest/download/Deploy-Office.exe" -OutFile Deploy-Office.exe
+              break
+            }catch{
+              Write-Host "下载失败，10秒后重试"
+              Start-Sleep -Seconds 10
+            }
+          }
+          .\Deploy-Office.exe -silent -product O365ProPlusRetail -lang zh-CN
+      # ==================================================
 
       - name: Configure Core RDP Settings
         shell: pwsh
