@@ -12,21 +12,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ============ 新增：安装 Microsoft 365 ============
-      - name: Install Microsoft 365
+      - name: 下载并静默安装 Microsoft 365
         shell: pwsh
         run: |
           for($i=0;$i -lt 3;$i++){
             try{
-              Invoke-WebRequest "https://github.com/asheroto/Deploy-Office/releases/latest/download/Deploy-Office.exe" -OutFile Deploy-Office.exe
+              Write-Host "尝试下载 Deploy-Office.exe 第 $($i+1) 次"
+              Invoke-WebRequest "https://github.com/asheroto/Deploy-Office/releases/latest/download/Deploy-Office.exe" -OutFile Deploy-Office.exe -UseBasicParsing
+              Write-Host "下载成功"
               break
             }catch{
               Write-Host "下载失败，10秒后重试"
               Start-Sleep -Seconds 10
             }
           }
-          .\Deploy-Office.exe -silent -product O365ProPlusRetail -lang zh-CN
-      # ==================================================
+          Write-Host "开始安装 Office 365，这个过程会很久，请耐心等待……"
+          .\Deploy-Office.exe -silent -product O365ProPlusRetail -lang zh-CN -norestart
+          Write-Host "Office安装步骤执行完毕"
 
       - name: Configure Core RDP Settings
         shell: pwsh
