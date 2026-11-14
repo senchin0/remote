@@ -12,17 +12,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 静默安装 WPS Office
+      - name: 静默全局安装 WPS Office（所有用户可用）
         shell: pwsh
         run: |
-          Write-Host "开始通过 winget 安装 WPS Office"
-          winget install Kingsoft.WPSOffice --silent --accept-package-agreements --accept-source-agreements
-          Start-Sleep -Seconds 90
-          $wpsPath = "$env:LOCALAPPDATA\Kingsoft\WPS Office\wps.exe"
-          if (-not (Test-Path $wpsPath)){
-            throw "WPS 安装失败，找不到 wps.exe"
+          $installerUrl = "https://wdl1.pcfg.cache.wpscdn.com/wpsdl/wpsoffice/download/12.2.0.23196/500.1001/WPSOffice_23196.exe"
+          $installerName = "WPSOffice_23196.exe"
+          Write-Host "下载WPS安装包"
+          Invoke-WebRequest -Uri $installerUrl -OutFile $installerName -UseBasicParsing
+
+          Write-Host "执行全局静默安装，等待完成..."
+          $proc = Start-Process -FilePath .\$installerName -ArgumentList "/S" -Wait -NoNewWindow -PassThru
+          Write-Host "安装程序退出码：$($proc.ExitCode)"
+          if ($proc.ExitCode -ne 0) {
+            throw "WPS安装程序返回失败"
           }
-          Write-Host "✅ WPS Office 安装校验通过"
+
+          Start-Sleep -Seconds 120
+          $wpsPath = "C:\Program Files\Kingsoft\WPS Office\wps.exe"
+          if (-not (Test-Path $wpsPath)){
+            throw "校验失败，找不到全局WPS"
+          }
+          Write-Host "✅ WPS全局安装完成，vum用户也可以使用"
 
       - name: Configure Core RDP Settings
         shell: pwsh
