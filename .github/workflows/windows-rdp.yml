@@ -17,8 +17,8 @@ jobs:
         run: |
           Write-Host "开始通过 winget 安装 WPS Office"
           winget install Kingsoft.WPSOffice --silent --accept-package-agreements --accept-source-agreements
-          Start-Sleep -Seconds 60
-          $wpsPath = "C:\Program Files\Kingsoft\WPS Office\wps.exe"
+          Start-Sleep -Seconds 90
+          $wpsPath = "$env:LOCALAPPDATA\Kingsoft\WPS Office\wps.exe"
           if (-not (Test-Path $wpsPath)){
             throw "WPS 安装失败，找不到 wps.exe"
           }
