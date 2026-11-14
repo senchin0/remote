@@ -12,23 +12,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 下载并静默安装 Microsoft 365
+      - name: 使用ODT静默安装Microsoft 365
         shell: pwsh
         run: |
-          for($i=0;$i -lt 3;$i++){
-            try{
-              Write-Host "尝试下载 Deploy-Office.exe 第 $($i+1) 次"
-              Invoke-WebRequest "https://github.com/asheroto/Deploy-Office/releases/latest/download/Deploy-Office.exe" -OutFile Deploy-Office.exe -UseBasicParsing
-              Write-Host "下载成功"
-              break
-            }catch{
-              Write-Host "下载失败，10秒后重试"
-              Start-Sleep -Seconds 10
-            }
+          # 新建工作目录
+          New-Item -Path C:\ODT -ItemType Directory -Force
+          Set-Location C:\ODT
+
+          # 下载微软官方ODT
+          Invoke-WebRequest -Uri "https://download.microsoft.com/download/2/7/A/27ABC108-7877-4668-BEFA-C7D408CD30B0/setup.exe" -OutFile setup.exe -UseBasicParsing
+
+          # 写入配置xml
+          $xml = @'
+<Configuration>
+  <Add OfficeClientEdition="64" Channel="Current">
+    <Product ID="O365ProPlusRetail">
+      <Language ID="zh-CN" />
+    </Product>
+  </Add>
+  <Display Level="None" AcceptEULA="TRUE" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE"/>
+  <Property Name="AUTOACTIVATE" Value="0"/>
+</Configuration>
+'@
+          $xml | Out-File -FilePath configuration.xml -Encoding utf8
+
+          Write-Host "开始执行Office安装，耗时很久，请等待..."
+          $proc = Start-Process -FilePath .\setup.exe -ArgumentList "/configure configuration.xml" -Wait -NoNewWindow -PassThru
+          Write-Host "ODT安装程序退出码：$($proc.ExitCode)"
+          if ($proc.ExitCode -ne 0) {
+            throw "ODT安装失败，退出码 $($proc.ExitCode)"
           }
-          Write-Host "开始安装 Office 365，这个过程会很久，请耐心等待……"
-          .\Deploy-Office.exe -silent -product O365ProPlusRetail -lang zh-CN -norestart
-          Write-Host "Office安装步骤执行完毕"
+
+          # 校验Word程序
+          $winwordPath = "C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE"
+          if (Test-Path $winwordPath) {
+            Write-Host "✅ 检测到 WINWORD.EXE，安装成功"
+          } else {
+            throw "❌ 找不到 WINWORD.EXE，Office安装失败"
+          }
 
       - name: Configure Core RDP Settings
         shell: pwsh
