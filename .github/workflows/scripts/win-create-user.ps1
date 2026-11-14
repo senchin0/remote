@@ -1,5 +1,5 @@
 # Create RDP user with fixed password
-$password = "15015795795"
+$password = "114514Ab"
 $securePass = ConvertTo-SecureString $password -AsPlainText -Force
 New-LocalUser -Name "vum" -Password $securePass -AccountNeverExpires
 Add-LocalGroupMember -Group "Administrators" -Member "vum"
