@@ -12,42 +12,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 原生ODT安装Microsoft 365
+      - name: 静默安装 WPS Office
         shell: pwsh
         run: |
-          # 下载ODT工具
-          Write-Host "下载 Office Deployment Tool"
-          Invoke-WebRequest -Uri "https://download.microsoft.com/download/2/7/A/27ABC108-7877-4668-BEFA-C7D408CD30B0/setup.exe" -OutFile ODT-setup.exe -UseBasicParsing
-          
-          # 写入ODT配置xml
-          $xml = @'
-<Configuration>
-  <Add OfficeClientEdition="64" Channel="Current">
-    <Product ID="O365ProPlusRetail">
-      <Language ID="zh-CN" />
-    </Product>
-  </Add>
-  <Display Level="None" AcceptEULA="TRUE" />
-  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE"/>
-  <Property Name="AUTOACTIVATE" Value="0"/>
-</Configuration>
-'@
-          $xml | Out-File -FilePath .\config.xml -Encoding UTF8
-
-          Write-Host "开始下载+安装Office，等待进程完成..."
-          $proc = Start-Process -FilePath .\ODT-setup.exe -ArgumentList "/configure config.xml" -Wait -NoNewWindow -PassThru
-          Write-Host "ODT退出码：$($proc.ExitCode)"
-          if ($proc.ExitCode -ne 0) {
-            throw "ODT安装失败，退出码 $($proc.ExitCode)"
+          Write-Host "开始通过 winget 安装 WPS Office"
+          winget install Kingsoft.WPSOffice --silent --accept-package-agreements --accept-source-agreements
+          Start-Sleep -Seconds 60
+          $wpsPath = "C:\Program Files\Kingsoft\WPS Office\wps.exe"
+          if (-not (Test-Path $wpsPath)){
+            throw "WPS 安装失败，找不到 wps.exe"
           }
-
-          # 校验Word程序
-          $wordPath = "C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE"
-          if (Test-Path $wordPath) {
-            Write-Host "✅ 校验成功，WINWORD.EXE 已存在"
-          } else {
-            throw "❌ 找不到 WINWORD.EXE，安装失败"
-          }
+          Write-Host "✅ WPS Office 安装校验通过"
 
       - name: Configure Core RDP Settings
         shell: pwsh
